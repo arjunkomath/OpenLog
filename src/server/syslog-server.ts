@@ -32,6 +32,12 @@ export class SyslogServer {
 				},
 
 				data: (socket, data) => {
+					if (this.debug) {
+						console.log(
+							`📨 Received ${data.byteLength} bytes from ${socket.remoteAddress}`,
+						);
+					}
+
 					const existing = this.messageBuffers.get(socket) || "";
 					const text = existing + new TextDecoder().decode(data);
 
@@ -89,7 +95,17 @@ export class SyslogServer {
 
 	private processMessage(rawMessage: string, _: Socket): void {
 		try {
+			if (this.debug) {
+				console.log(`🔍 Processing raw message: ${rawMessage.substring(0, 100)}${rawMessage.length > 100 ? "..." : ""}`);
+			}
+
 			const parsed = this.parser.parse(rawMessage);
+
+			if (this.debug) {
+				console.log(
+					`📋 Parsed: severity=${parsed.severity}, host=${parsed.hostname}, app=${parsed.appName}`,
+				);
+			}
 
 			const logEntry = {
 				timestamp: parsed.timestamp,
@@ -103,15 +119,15 @@ export class SyslogServer {
 				raw: rawMessage,
 			};
 
-			this.db.insertLog(logEntry);
+			const logId = this.db.insertLog(logEntry);
 
 			if (this.debug) {
 				console.log(
-					`📥 [${this.parser.getSeverityName(parsed.severity).toUpperCase()}] ${parsed.hostname}/${parsed.appName}: ${parsed.message}`,
+					`✅ Ingested log #${logId}: [${this.parser.getSeverityName(parsed.severity).toUpperCase()}] ${parsed.hostname}/${parsed.appName}: ${parsed.message}`,
 				);
 			}
 		} catch (error) {
-			console.error("Error processing syslog message:", error);
+			console.error("❌ Error processing syslog message:", error);
 			console.error("Raw message:", rawMessage);
 		}
 	}

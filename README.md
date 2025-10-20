@@ -317,7 +317,10 @@ Enable debug mode to see detailed logs for every operation:
 DEBUG=true bun start
 
 # You'll see detailed logs like:
-# 📥 [ERROR] server1.local/app: Database connection failed
+# 📨 Received 256 bytes from 127.0.0.1
+# 🔍 Processing raw message: <131>1 2024-01-01T12:00:00Z server1.local app - - Error: Database connection failed
+# 📋 Parsed: severity=3, host=server1.local, app=app
+# ✅ Ingested log #42: [ERROR] server1.local/app: Database connection failed
 # Running 4 alert checks...
 ```
 
