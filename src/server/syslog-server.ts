@@ -47,48 +47,81 @@ export class SyslogServer {
 						);
 					}
 
-					const lines = text.split(/\r?\n/);
+					let remaining = text;
 
-					if (lines.length > 1) {
-						const complete = lines.slice(0, -1);
-						const lastLine = lines[lines.length - 1];
-						this.messageBuffers.set(socket, lastLine || "");
+					while (remaining.length > 0) {
+						const match = remaining.match(/^(\d+)\s/);
 
-						if (this.debug) {
-							console.log(`📄 Processing ${complete.length} complete lines`);
-						}
+						if (match?.[1]) {
+							const msgLength = parseInt(match[1], 10);
+							const prefixLength = match[0].length;
+							const totalLength = prefixLength + msgLength;
 
-						for (const line of complete) {
-							if (line.trim()) {
-								this.processMessage(line.trim(), socket);
-							}
-						}
-					} else {
-						this.messageBuffers.set(socket, text);
+							if (remaining.length >= totalLength) {
+								const message = remaining.substring(prefixLength, totalLength);
 
-						if (text.includes("\0")) {
-							const messages = text.split("\0");
-							const lastMessage = messages[messages.length - 1];
-							this.messageBuffers.set(socket, lastMessage || "");
-
-							if (this.debug) {
-								console.log(
-									`📄 Processing ${messages.length - 1} null-terminated messages`,
-								);
-							}
-
-							for (let i = 0; i < messages.length - 1; i++) {
-								const msg = messages[i];
-								if (msg?.trim()) {
-									this.processMessage(msg.trim(), socket);
+								if (this.debug) {
+									console.log(
+										`📏 Found octet-counted message: ${msgLength} bytes`,
+									);
 								}
+
+								this.processMessage(message, socket);
+								remaining = remaining.substring(totalLength);
+							} else {
+								if (this.debug) {
+									console.log(
+										`⏳ Waiting for ${totalLength - remaining.length} more bytes (have ${remaining.length}, need ${totalLength})`,
+									);
+								}
+								break;
 							}
-						} else if (this.debug) {
-							console.log(
-								`⏳ Buffering message (no newline or null terminator yet)`,
-							);
+						} else {
+							const lines = remaining.split(/\r?\n/);
+
+							if (lines.length > 1) {
+								const complete = lines.slice(0, -1);
+								remaining = lines[lines.length - 1] || "";
+
+								if (this.debug) {
+									console.log(
+										`📄 Processing ${complete.length} newline-delimited messages`,
+									);
+								}
+
+								for (const line of complete) {
+									if (line.trim()) {
+										this.processMessage(line.trim(), socket);
+									}
+								}
+							} else if (remaining.includes("\0")) {
+								const messages = remaining.split("\0");
+								remaining = messages[messages.length - 1] || "";
+
+								if (this.debug) {
+									console.log(
+										`📄 Processing ${messages.length - 1} null-terminated messages`,
+									);
+								}
+
+								for (let i = 0; i < messages.length - 1; i++) {
+									const msg = messages[i];
+									if (msg?.trim()) {
+										this.processMessage(msg.trim(), socket);
+									}
+								}
+							} else {
+								if (this.debug) {
+									console.log(
+										`⏳ Buffering message (no length prefix or delimiter)`,
+									);
+								}
+								break;
+							}
 						}
 					}
+
+					this.messageBuffers.set(socket, remaining);
 				},
 
 				close: (socket) => {
