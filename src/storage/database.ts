@@ -155,6 +155,29 @@ export class LogDatabase {
 		return JSON.stringify(logs, null, 0);
 	}
 
+	getRecentLogs(limit: number = 50): LogEntry[] {
+		const stmt = this.db.prepare(`
+      SELECT * FROM logs
+      ORDER BY timestamp DESC
+      LIMIT $limit
+    `);
+
+		const rows = stmt.all({ $limit: limit }) as any[];
+
+		return rows.map((row) => ({
+			id: row.id,
+			timestamp: new Date(row.timestamp),
+			facility: row.facility,
+			severity: row.severity,
+			hostname: row.hostname,
+			appName: row.app_name,
+			procId: row.proc_id,
+			msgId: row.msg_id,
+			message: row.message,
+			raw: row.raw,
+		}));
+	}
+
 	runAlertQuery(predicate: string, startTime: Date, endTime: Date): number {
 		try {
 			const fullQuery = `SELECT COUNT(*) as count FROM logs WHERE timestamp >= $startTime AND timestamp <= $endTime AND (${predicate})`;

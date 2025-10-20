@@ -8,13 +8,16 @@ export class SyslogServer {
 	private server: TCPSocketListener<undefined> | null = null;
 	private connections: Set<Socket> = new Set();
 	private messageBuffers: Map<Socket, string> = new Map();
+	private debug: boolean;
 
 	constructor(
 		private port: number = 6514,
 		private host: string = "0.0.0.0",
+		debug: boolean = false,
 	) {
 		this.parser = new SyslogParser();
 		this.db = new LogDatabase();
+		this.debug = debug;
 	}
 
 	async start(): Promise<void> {
@@ -102,11 +105,9 @@ export class SyslogServer {
 
 			this.db.insertLog(logEntry);
 
-			if (parsed.severity <= 3) {
+			if (this.debug) {
 				console.log(
-					`[${this.parser.getSeverityName(parsed.severity).toUpperCase()}] ${
-						parsed.hostname
-					} ${parsed.appName}: ${parsed.message}`,
+					`📥 [${this.parser.getSeverityName(parsed.severity).toUpperCase()}] ${parsed.hostname}/${parsed.appName}: ${parsed.message}`,
 				);
 			}
 		} catch (error) {

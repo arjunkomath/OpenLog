@@ -56,12 +56,15 @@ export class AlertEngine {
 
 		try {
 			const rules = this.configManager.getAlertRules();
+			const config = this.configManager.getConfig();
 
 			if (rules.length === 0) {
 				return;
 			}
 
-			console.log(`Running ${rules.length} alert checks...`);
+			if (config.debug) {
+				console.log(`Running ${rules.length} alert checks...`);
+			}
 
 			for (const rule of rules) {
 				try {

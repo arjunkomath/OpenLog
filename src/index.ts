@@ -1,10 +1,12 @@
 import { AlertEngine } from "./alerting/alert-engine";
 import { ConfigManager } from "./config/config";
+import { HttpServer } from "./http/http-server";
 import { SyslogServer } from "./server/syslog-server";
 import { LogDatabase } from "./storage/database";
 
 class OpenLogService {
 	private syslogServer: SyslogServer;
+	private httpServer: HttpServer | null = null;
 	private configManager: ConfigManager;
 	private alertEngine: AlertEngine;
 	private db: LogDatabase;
@@ -22,12 +24,22 @@ class OpenLogService {
 		this.syslogServer = new SyslogServer(
 			config.server.port,
 			config.server.host,
+			config.debug,
 		);
 
 		this.alertEngine = new AlertEngine(
 			this.configManager,
 			this.syslogServer.getDatabase(),
 		);
+
+		if (config.http.enabled) {
+			this.httpServer = new HttpServer(
+				config.http.port,
+				config.http.host,
+				this.db,
+				this.configManager,
+			);
+		}
 
 		this.setupCleanup(config.database.retentionDays);
 	}
@@ -55,11 +67,20 @@ class OpenLogService {
 		try {
 			await this.syslogServer.start();
 
+			if (this.httpServer) {
+				await this.httpServer.start();
+			}
+
 			this.alertEngine.start();
 
 			const config = this.configManager.getConfig();
 			console.log("\n✅ Service started successfully!");
 			console.log(`📥 Syslog TCP: ${config.server.host}:${config.server.port}`);
+
+			if (config.http.enabled) {
+				console.log(`🌐 HTTP API: http://${config.http.host}:${config.http.port}`);
+			}
+
 			console.log(`🗄️  Database: ${config.database.path || "data/logs.db"}`);
 			console.log(`📊 Retention: ${config.database.retentionDays} days`);
 
@@ -70,6 +91,10 @@ class OpenLogService {
 				);
 			} else {
 				console.log("🔕 Alerts: Disabled");
+			}
+
+			if (config.debug) {
+				console.log("🐛 Debug: Enabled");
 			}
 
 			this.setupSignalHandlers();
@@ -86,6 +111,10 @@ class OpenLogService {
 			this.alertEngine.stop();
 
 			await this.syslogServer.stop();
+
+			if (this.httpServer) {
+				await this.httpServer.stop();
+			}
 
 			if (this.cleanupInterval) {
 				clearInterval(this.cleanupInterval);

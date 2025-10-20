@@ -4,7 +4,7 @@ import { z } from "zod";
 
 const AlertRuleSchema = z.object({
 	name: z.string(),
-	enabled: z.boolean().default(true),
+	enabled: z.boolean().default(false),
 	window: z
 		.string()
 		.regex(/^\d+[mhd]$/, "Window format must be like '15m', '1h', or '7d'"),
@@ -29,6 +29,14 @@ const ConfigSchema = z.object({
 		host: z.string().default("0.0.0.0"),
 		port: z.number().default(6514),
 	}),
+	http: z
+		.object({
+			enabled: z.boolean().default(true),
+			host: z.string().default("0.0.0.0"),
+			port: z.number().default(3000),
+		})
+		.optional()
+		.default({ enabled: true, host: "0.0.0.0", port: 3000 }),
 	database: z.object({
 		path: z.string().optional(),
 		retentionDays: z.number().positive().default(7),
@@ -37,6 +45,7 @@ const ConfigSchema = z.object({
 		enabled: z.boolean().default(true),
 		checkInterval: z.number().positive().default(60),
 	}),
+	debug: z.boolean().default(false),
 	alerts: z.array(AlertRuleSchema),
 });
 
@@ -47,20 +56,33 @@ export class ConfigManager {
 	private config: Config;
 
 	constructor() {
-		const path = join(process.cwd(), "openlog.json");
-
-		if (existsSync(path)) {
+		if (process.env.CONFIG_JSON) {
 			try {
-				const rawConfig = JSON.parse(readFileSync(path, "utf-8"));
+				const rawConfig = JSON.parse(process.env.CONFIG_JSON);
 				this.config = ConfigSchema.parse(rawConfig);
-				console.log(`Loaded configuration from ${path}`);
+				console.log(
+					"Loaded configuration from CONFIG_JSON environment variable",
+				);
 			} catch (error) {
-				console.error("Error loading configuration:", error);
+				console.error("Error parsing CONFIG_JSON:", error);
 				this.config = this.getDefaultConfig();
 			}
 		} else {
-			console.log("No configuration file found, using defaults");
-			this.config = this.getDefaultConfig();
+			const path = join(process.cwd(), "openlog.json");
+
+			if (existsSync(path)) {
+				try {
+					const rawConfig = JSON.parse(readFileSync(path, "utf-8"));
+					this.config = ConfigSchema.parse(rawConfig);
+					console.log(`Loaded configuration from ${path}`);
+				} catch (error) {
+					console.error("Error loading configuration:", error);
+					this.config = this.getDefaultConfig();
+				}
+			} else {
+				console.log("No configuration file found, using defaults");
+				this.config = this.getDefaultConfig();
+			}
 		}
 
 		this.loadEnvironmentOverrides();
@@ -72,6 +94,11 @@ export class ConfigManager {
 				host: "0.0.0.0",
 				port: 6514,
 			},
+			http: {
+				enabled: true,
+				host: "0.0.0.0",
+				port: 3000,
+			},
 			database: {
 				retentionDays: 7,
 			},
@@ -79,6 +106,7 @@ export class ConfigManager {
 				enabled: true,
 				checkInterval: 60,
 			},
+			debug: false,
 			alerts: [],
 		};
 	}
@@ -112,6 +140,22 @@ export class ConfigManager {
 				process.env.ALERT_CHECK_INTERVAL,
 				10,
 			);
+		}
+
+		if (process.env.DEBUG) {
+			this.config.debug = process.env.DEBUG === "true";
+		}
+
+		if (process.env.HTTP_ENABLED) {
+			this.config.http.enabled = process.env.HTTP_ENABLED === "true";
+		}
+
+		if (process.env.HTTP_HOST) {
+			this.config.http.host = process.env.HTTP_HOST;
+		}
+
+		if (process.env.HTTP_PORT) {
+			this.config.http.port = parseInt(process.env.HTTP_PORT, 10);
 		}
 	}
 
