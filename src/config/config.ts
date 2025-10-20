@@ -42,7 +42,7 @@ const ConfigSchema = z.object({
 		retentionDays: z.number().positive().default(7),
 	}),
 	alerting: z.object({
-		enabled: z.boolean().default(true),
+		enabled: z.boolean().default(false),
 		checkInterval: z.number().positive().default(60),
 	}),
 	debug: z.boolean().default(false),
