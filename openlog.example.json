@@ -1,0 +1,25 @@
+{
+	"server": {
+		"host": "0.0.0.0",
+		"port": 6514
+	},
+	"database": {
+		"retentionDays": 7
+	},
+	"alerting": {
+		"enabled": true,
+		"checkInterval": 60
+	},
+	"alerts": [
+		{
+			"name": "High Error Rate",
+			"enabled": true,
+			"window": "15m",
+			"query": "LOWER(message) LIKE '%error%' OR LOWER(message) LIKE '%fail%' OR LOWER(message) LIKE '%exception%'",
+			"threshold": 10,
+			"operator": "gt",
+			"webhook": "https://webhook.site/019a009e-3f73-765b-88c3-e4169dcad7bf",
+			"cooldown": "5m"
+		}
+	]
+}
