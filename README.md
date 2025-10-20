@@ -1,5 +1,3 @@
-# OpenLog - Lightweight Syslog Ingestion & Alerting Service
-
 A super lightweight syslog ingestion and alerting service built with Bun. It accepts standard RFC 5424 syslog messages over TCP and can trigger webhook alerts based on configurable conditions.
 
 ## Features
