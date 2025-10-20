@@ -37,10 +37,6 @@ export class AlertEngine {
 		console.log(
 			`Alert engine started, checking every ${config.alerting.checkInterval} seconds`,
 		);
-
-		this.runChecks().catch((error) => {
-			console.error("Error during initial alert checks:", error);
-		});
 	}
 
 	stop(): void {
