@@ -41,12 +41,22 @@ export class SyslogServer {
 					const existing = this.messageBuffers.get(socket) || "";
 					const text = existing + new TextDecoder().decode(data);
 
+					if (this.debug) {
+						console.log(
+							`📦 Buffer content (${text.length} chars): ${text.substring(0, 200)}`,
+						);
+					}
+
 					const lines = text.split(/\r?\n/);
 
 					if (lines.length > 1) {
 						const complete = lines.slice(0, -1);
 						const lastLine = lines[lines.length - 1];
 						this.messageBuffers.set(socket, lastLine || "");
+
+						if (this.debug) {
+							console.log(`📄 Processing ${complete.length} complete lines`);
+						}
 
 						for (const line of complete) {
 							if (line.trim()) {
@@ -61,12 +71,22 @@ export class SyslogServer {
 							const lastMessage = messages[messages.length - 1];
 							this.messageBuffers.set(socket, lastMessage || "");
 
+							if (this.debug) {
+								console.log(
+									`📄 Processing ${messages.length - 1} null-terminated messages`,
+								);
+							}
+
 							for (let i = 0; i < messages.length - 1; i++) {
 								const msg = messages[i];
 								if (msg?.trim()) {
 									this.processMessage(msg.trim(), socket);
 								}
 							}
+						} else if (this.debug) {
+							console.log(
+								`⏳ Buffering message (no newline or null terminator yet)`,
+							);
 						}
 					}
 				},
@@ -96,7 +116,9 @@ export class SyslogServer {
 	private processMessage(rawMessage: string, _: Socket): void {
 		try {
 			if (this.debug) {
-				console.log(`🔍 Processing raw message: ${rawMessage.substring(0, 100)}${rawMessage.length > 100 ? "..." : ""}`);
+				console.log(
+					`🔍 Processing raw message: ${rawMessage.substring(0, 100)}${rawMessage.length > 100 ? "..." : ""}`,
+				);
 			}
 
 			const parsed = this.parser.parse(rawMessage);

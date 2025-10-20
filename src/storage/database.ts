@@ -50,7 +50,8 @@ export class LogDatabase {
 	private db: Database;
 
 	constructor(dbPath?: string) {
-		const defaultPath = join(process.cwd(), "data", "logs.db");
+		const defaultPath =
+			process.env.DB_PATH ?? join(process.cwd(), "data", "logs.db");
 		const finalPath = dbPath || defaultPath;
 
 		const dbDir = join(finalPath, "..");

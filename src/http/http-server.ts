@@ -76,7 +76,8 @@ export class HttpServer {
 					checkInterval: `${config.alerting.checkInterval}s`,
 				},
 				database: {
-					retention: `${config.database.retentionDays} days`,
+					path: this.configManager.getDbPath(),
+					retention: `${this.configManager.getRetentionDays()} days`,
 				},
 				debug: config.debug,
 			},

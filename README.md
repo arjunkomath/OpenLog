@@ -35,9 +35,6 @@ Edit `config/alerts.json` to configure your alerts:
     "host": "0.0.0.0",
     "port": 3000
   },
-  "database": {
-    "retentionDays": 7
-  },
   "alerting": {
     "enabled": true,
     "checkInterval": 60
@@ -116,9 +113,6 @@ curl http://localhost:3000/
       "enabled": true,
       "activeRules": 4,
       "checkInterval": "60s"
-    },
-    "database": {
-      "retention": "7 days"
     },
     "debug": false
   }
@@ -259,11 +253,13 @@ When an alert is triggered, the following JSON payload is sent to the webhook:
 - `HTTP_ENABLED`: Enable/disable HTTP API (default: true)
 - `HTTP_HOST`: Bind address for HTTP server (default: "0.0.0.0")
 - `HTTP_PORT`: Listen port for HTTP server (default: 3000)
-- `DB_PATH`: SQLite database path (default: "logs.db")
-- `RETENTION_DAYS`: Log retention period (default: 7)
+- `DB_PATH`: SQLite database path (default: "data/logs.db")
+- `RETENTION_DAYS`: Log retention period in days (default: 7)
 - `ALERTING_ENABLED`: Enable/disable alerting (default: true)
 - `ALERT_CHECK_INTERVAL`: Alert check interval in seconds (default: 60)
 - `DEBUG`: Enable debug logging for all operations (default: false)
+
+**Note:** Database configuration (`DB_PATH` and `RETENTION_DAYS`) is only available via environment variables, not in the config file.
 
 ### Full Configuration Override
 
@@ -271,7 +267,7 @@ You can provide the entire configuration as a JSON string via the `CONFIG_JSON` 
 
 ```bash
 # Provide full configuration via environment variable
-CONFIG_JSON='{"server":{"host":"0.0.0.0","port":6514},"http":{"enabled":true,"host":"0.0.0.0","port":3000},"database":{"retentionDays":30},"alerting":{"enabled":true,"checkInterval":120},"debug":false,"alerts":[]}' bun start
+CONFIG_JSON='{"server":{"host":"0.0.0.0","port":6514},"http":{"enabled":true,"host":"0.0.0.0","port":3000},"alerting":{"enabled":true,"checkInterval":120},"debug":false,"alerts":[]}' bun start
 
 # Or use a more readable format with environment variable files
 export CONFIG_JSON=$(cat <<'EOF'
@@ -284,9 +280,6 @@ export CONFIG_JSON=$(cat <<'EOF'
     "enabled": true,
     "host": "0.0.0.0",
     "port": 3000
-  },
-  "database": {
-    "retentionDays": 30
   },
   "alerting": {
     "enabled": true,

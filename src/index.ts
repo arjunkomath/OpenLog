@@ -19,7 +19,7 @@ class OpenLogService {
 		this.configManager = new ConfigManager();
 		const config = this.configManager.getConfig();
 
-		this.db = new LogDatabase(config.database.path);
+		this.db = new LogDatabase(this.configManager.getDbPath());
 
 		this.syslogServer = new SyslogServer(
 			config.server.port,
@@ -41,11 +41,12 @@ class OpenLogService {
 			);
 		}
 
-		this.setupCleanup(config.database.retentionDays);
+		this.setupCleanup();
 	}
 
-	private setupCleanup(retentionDays: number): void {
+	private setupCleanup(): void {
 		const runCleanup = () => {
+			const retentionDays = this.configManager.getRetentionDays();
 			const deleted = this.db.cleanOldLogs(retentionDays);
 			if (deleted > 0) {
 				console.log(
@@ -58,6 +59,7 @@ class OpenLogService {
 
 		this.cleanupInterval = setInterval(runCleanup, 24 * 60 * 60 * 1000);
 
+		const retentionDays = this.configManager.getRetentionDays();
 		console.log(
 			`♻️  Log rotation: Daily cleanup, ${retentionDays} days retention`,
 		);
@@ -78,11 +80,15 @@ class OpenLogService {
 			console.log(`📥 Syslog TCP: ${config.server.host}:${config.server.port}`);
 
 			if (config.http.enabled) {
-				console.log(`🌐 HTTP API: http://${config.http.host}:${config.http.port}`);
+				console.log(
+					`🌐 HTTP API: http://${config.http.host}:${config.http.port}`,
+				);
 			}
 
-			console.log(`🗄️  Database: ${config.database.path || "data/logs.db"}`);
-			console.log(`📊 Retention: ${config.database.retentionDays} days`);
+			console.log(`🗄️  Database: ${this.configManager.getDbPath()}`);
+			console.log(
+				`📊 Retention: ${this.configManager.getRetentionDays()} days`,
+			);
 
 			if (config.alerting.enabled) {
 				const alertCount = this.configManager.getAlertRules().length;

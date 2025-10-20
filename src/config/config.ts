@@ -37,10 +37,6 @@ const ConfigSchema = z.object({
 		})
 		.optional()
 		.default({ enabled: true, host: "0.0.0.0", port: 3000 }),
-	database: z.object({
-		path: z.string().optional(),
-		retentionDays: z.number().positive().default(7),
-	}),
 	alerting: z.object({
 		enabled: z.boolean().default(false),
 		checkInterval: z.number().positive().default(60),
@@ -99,9 +95,6 @@ export class ConfigManager {
 				host: "0.0.0.0",
 				port: 3000,
 			},
-			database: {
-				retentionDays: 7,
-			},
 			alerting: {
 				enabled: true,
 				checkInterval: 60,
@@ -118,17 +111,6 @@ export class ConfigManager {
 
 		if (process.env.SYSLOG_PORT) {
 			this.config.server.port = parseInt(process.env.SYSLOG_PORT, 10);
-		}
-
-		if (process.env.DB_PATH) {
-			this.config.database.path = process.env.DB_PATH;
-		}
-
-		if (process.env.RETENTION_DAYS) {
-			this.config.database.retentionDays = parseInt(
-				process.env.RETENTION_DAYS,
-				10,
-			);
 		}
 
 		if (process.env.ALERTING_ENABLED) {
@@ -157,6 +139,16 @@ export class ConfigManager {
 		if (process.env.HTTP_PORT) {
 			this.config.http.port = parseInt(process.env.HTTP_PORT, 10);
 		}
+	}
+
+	getDbPath(): string {
+		return process.env.DB_PATH ?? join(process.cwd(), "data", "logs.db");
+	}
+
+	getRetentionDays(): number {
+		return process.env.RETENTION_DAYS
+			? parseInt(process.env.RETENTION_DAYS, 10)
+			: 7;
 	}
 
 	getConfig(): Config {
