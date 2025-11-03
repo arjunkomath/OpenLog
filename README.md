@@ -1,16 +1,23 @@
-A super lightweight syslog ingestion and alerting service built with Bun. It accepts standard RFC 5424 syslog messages over TCP and can trigger webhook alerts based on configurable conditions.
+A lightweight syslog ingestion and alerting service built with Bun. It has a syslog endpoint over TCP that can accept messages and can trigger alerts based on configurable conditions.
+
+## Why?
+
+I used this to drain CDN logs and setup alerts.
+
+> [!WARNING]  
+> **Lot of the code was written by AI (Claude)**, this was an experiment and I didn't want to spend hours writing this.
+> If you're wondering this works; yes, kinda.
+
+Over to you Claude.
+
+---
 
 ## Features
 
 - **RFC 5424 Compliant**: Fully supports the standard syslog format
 - **TCP Transport**: Reliable message delivery with TCP protocol
-- **SQLite Storage**: Fast, embedded database with automatic indexing
-- **HTTP API**: Health check and service information endpoints
 - **Flexible Alerting**: SQL-based triggers for powerful and efficient queries
 - **Webhook Notifications**: HTTP POST alerts with custom headers
-- **Time Windows**: Support for minute/hour/day-based alert windows
-- **Alert Cooldowns**: Prevent alert flooding with configurable cooldown periods
-- **Log Retention**: Automatic cleanup of old logs
 
 ## Quick Start
 
@@ -316,13 +323,6 @@ DEBUG=true bun start
 # ✅ Ingested log #42: [ERROR] server1.local/app: Database connection failed
 # Running 4 alert checks...
 ```
-
-## Performance
-
-- Bun's native SQLite is significantly faster than Node.js alternatives
-- WAL mode enabled for concurrent reads/writes
-- Indexed timestamps for fast time-range queries
-- Automatic log cleanup to manage database size
 
 ## Testing
 
